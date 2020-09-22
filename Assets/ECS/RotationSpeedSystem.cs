@@ -15,13 +15,13 @@ public class RotationSpeedSystem : SystemBase
     {
         var deltaTime = Time.DeltaTime;
 
-        // The in keyword on the RotationSpeed_SpawnAndRemove component tells the job scheduler that this job will not write to rotSpeedSpawnAndRemove
+        // The in keyword on the RotationSpeed component tells the job scheduler that this job will not write to rotSpeedSpawnAndRemove
         Entities
-            .WithName("RotationSpeedSystem_SpawnAndRemove")
-            .ForEach((ref Rotation rotation, in RotationSpeed rotSpeedSpawnAndRemove) =>
+            .WithName("RotationSpeedSystem")
+            .ForEach((ref Rotation rotation, in RotationSpeed rotSpeed) =>
             {
                 // Rotate something about its up vector at the speed given by RotationSpeed_SpawnAndRemove.
-                rotation.Value = math.mul(math.normalize(rotation.Value), quaternion.AxisAngle(math.up(), rotSpeedSpawnAndRemove.RadiansPerSecond * deltaTime));
+                rotation.Value = math.mul(math.normalize(rotation.Value), quaternion.AxisAngle(math.up(), rotSpeed.RadiansPerSecond * deltaTime));
             }).ScheduleParallel();
     }
 }

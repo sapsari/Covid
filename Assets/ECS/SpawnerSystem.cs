@@ -43,9 +43,9 @@ public class SpawnerSystem : SystemBase
         // Since this job only runs on the first frame, we want to ensure Burst compiles it before running to get the best performance (3rd parameter of WithBurst)
         // The actual job will be cached once it is compiled (it will only get Burst compiled once).
         Entities
-            .WithName("SpawnerSystem_SpawnAndRemove")
+            .WithName("SpawnerSystem")
             .WithBurst(FloatMode.Default, FloatPrecision.Standard, true)
-            .ForEach((Entity entity, int entityInQueryIndex, in Spawner spawner, in LocalToWorld location) =>
+            .ForEach((Entity entity, int entityInQueryIndex, ref Spawner spawner, in LocalToWorld location) =>
             {
                 var random = new Random(1);
 
@@ -60,6 +60,20 @@ public class SpawnerSystem : SystemBase
                         commandBuffer.SetComponent(entityInQueryIndex, instance, new Translation { Value = position });
                         commandBuffer.SetComponent(entityInQueryIndex, instance, new LifeTime { Value = random.NextFloat(1.0F, 10.0F) });
                         commandBuffer.SetComponent(entityInQueryIndex, instance, new RotationSpeed { RadiansPerSecond = math.radians(random.NextFloat(25.0F, 90.0F)) });
+
+
+                        AgentState state = AgentState.Healthy;
+                        var rand = random.NextFloat();
+                        if (rand <= spawner.InitialInfectedRatio)
+                            state = AgentState.Infected;
+                            
+                        commandBuffer.SetComponent(entityInQueryIndex, instance, new Agent { State = state });
+
+
+                        if (state == AgentState.Healthy)
+                            spawner.TotalHealthy++;
+                        else
+                            spawner.TotalInfected++;
                     }
                 }
 

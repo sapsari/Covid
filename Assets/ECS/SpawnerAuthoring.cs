@@ -12,6 +12,8 @@ public class SpawnerAuthoring : MonoBehaviour, IDeclareReferencedPrefabs, IConve
     public int CountX;
     public int CountY;
 
+    public float InitialInfectedRatio;
+
     // Referenced prefabs have to be declared so that the conversion system knows about them ahead of time
     public void DeclareReferencedPrefabs(List<GameObject> referencedPrefabs)
     {
@@ -29,6 +31,7 @@ public class SpawnerAuthoring : MonoBehaviour, IDeclareReferencedPrefabs, IConve
             Prefab = conversionSystem.GetPrimaryEntity(Prefab),
             CountX = CountX,
             CountY = CountY,
+            InitialInfectedRatio = InitialInfectedRatio,
         };
         dstManager.AddComponentData(entity, spawnerData);
     }
