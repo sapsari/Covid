@@ -4,6 +4,7 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
+using Unity.Rendering;
 
 public class AgentSystem : SystemBase
 {
@@ -35,5 +36,25 @@ public class AgentSystem : SystemBase
 
 
         }).Schedule();
+
+
+
+        //var changeColorJobHandle =
+        Entities.ForEach((Entity entity, int nativeThreadIndex, ref Agent agent, ref URPMaterialPropertyBaseColor color) =>
+        {
+            //lifetime.Value -= deltaTime;
+
+            if (agent.State == AgentState.Infected)
+            {
+                //commandBuffer.DestroyEntity(nativeThreadIndex, entity);
+
+                // ColorCombo375 with Hex Colors #F1433F #F7E967 #A9CF54 #70B7BA #3D4C53
+                // #F1433F
+                color.Value.x = 241f / 255;
+                color.Value.y = 67f / 255;
+                color.Value.z = 63f / 255;
+                color.Value.w = 0f;
+            }
+        }).ScheduleParallel();
     }
 }
