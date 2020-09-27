@@ -10,6 +10,10 @@ public struct Agent : IComponentData
 {
     public AgentState State;
 
+    public bool IsWearingMask;
+    public float RiskFactor;
+
+
 
     // Add fields to your component here. Remember that:
     //
