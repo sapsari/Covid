@@ -47,23 +47,23 @@ public static class JobLogger
 public class LifeTimeSystem : SystemBase
 {
     EntityCommandBufferSystem m_Barrier;
-    float deltaTime;
+    float deltaTime222;
 
     protected override void OnCreate()
     {
         m_Barrier = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
     }
 
-    static int GetPositionHash(float3 position)
+    static int GetPositionHash(float3 position, int offsetX = 0, int offsetY = 0)
     {
         //var hash = (int)math.hash(new int3(math.floor(position / cellSize)));
 
-        var x = (int)math.floor(position.x / Constants.CellSize);
-        var z = (int)math.floor(position.z / Constants.CellSize);
+        var x = (int)math.floor(position.x / Constants.CellSize) + offsetX;
+        var z = (int)math.floor(position.z / Constants.CellSize) + offsetY;
 
-        const int offset = 10000;
+        const int hashOffset = 10000;
 
-        var hash = x * offset + z;
+        var hash = x * hashOffset + z;
 
         return hash;
     }
@@ -75,22 +75,22 @@ public class LifeTimeSystem : SystemBase
         var commandBuffer = m_Barrier.CreateCommandBuffer().AsParallelWriter();
 
         //var deltaTime = Time.DeltaTime;
-        this.deltaTime += Time.DeltaTime;
+        this.deltaTime222 += Time.DeltaTime;
 
         //Debug.WriteLine($"dt:{deltaTime}");
         //JobLogger.Log($"dt:{deltaTime}");
 
-        if (deltaTime > Constants.TickTime)
-            deltaTime -= Constants.TickTime;
-        else
-            return;
+        if (deltaTime222 > Constants.TickTime)
+            deltaTime222 -= Constants.TickTime;
+        //else
+            //return;
 
         //NativeArray<Entity> entities = EntityManager.GetAllEntities(Allocator.Persistent);
         
 
 
         const int ASDASD = 100 * 100;
-        const int cellSize = 2; // 2 meters
+        //const int cellSize = 2; // 2 meters
         var hashMap = new NativeMultiHashMap<int, AgentFactor>(ASDASD, Allocator.TempJob);
 
         var parallelHashMap = hashMap.AsParallelWriter();
@@ -122,6 +122,8 @@ public class LifeTimeSystem : SystemBase
         //var parallelHashMap2 = hashMap.AsParallel();
         //hashMap.as
 
+        var dt = Time.DeltaTime;
+
         var increaseInfectionJobHandle = Entities
             .WithName("IncreaseInfectionJob")
             .WithAll<Agent>()
@@ -129,52 +131,43 @@ public class LifeTimeSystem : SystemBase
             {
                 if (agent.State == AgentState.Healthy)
                 {
-
-                    var random = new Random(1);
-
-                    var position = localToWorld.Position;
-                    //var hash = (int)math.hash(new int3(math.floor(localToWorld.Position / cellSize)));
-                    var hash = GetPositionHash(localToWorld.Position);
-
-                    var neighbours = hashMap.GetValuesForKey(hash);
-
-
-                    //using (var enumerator = neighbours.GetEnumerator())
-                    var enumerator = neighbours.GetEnumerator();
+                    agent.DeltaTime += dt;
+                    if (agent.DeltaTime > Constants.TickTime)
                     {
-                        while (enumerator.MoveNext())
+                        agent.DeltaTime -= Constants.TickTime;
+
+
+                        var random = new Random(1);
+
+                        var position = localToWorld.Position;
+
+
+                        NewMethod(in localToWorld, ref agent, in hashMap, in position, 0, 0);
+                        NewMethod(in localToWorld, ref agent, in hashMap, in position, 0, 1);
+                        NewMethod(in localToWorld, ref agent, in hashMap, in position, 1, 1);
+                        NewMethod(in localToWorld, ref agent, in hashMap, in position, -1, 1);
+                        NewMethod(in localToWorld, ref agent, in hashMap, in position, 0, -1);
+                        NewMethod(in localToWorld, ref agent, in hashMap, in position, 1, -1);
+                        NewMethod(in localToWorld, ref agent, in hashMap, in position, -1, -1);
+                        NewMethod(in localToWorld, ref agent, in hashMap, in position, 1, 0);
+                        NewMethod(in localToWorld, ref agent, in hashMap, in position, -1, 0);
+
+
+                        if (agent.RiskFactor > random.NextFloat())
                         {
-                            var neighbour = enumerator.Current;
+                            agent.State = AgentState.Infected;
+                        }
 
-                            if (neighbour.State != AgentState.Infected)
-                                continue;
-
+                        /*
+                        foreach (var neighbour in neighbours)
+                        {
                             if (math.distancesq(neighbour.Position, position) < 2 * 2)
                             {
-                                var transmissionRisk = agent.IsWearingMask ? .05f : 0.02f;
-
-                                agent.RiskFactor += transmissionRisk;
                                 //neighbour.Factor;
-                                //agent.f
                             }
-                        }
+                        }*/
+
                     }
-
-
-                    if (agent.RiskFactor > random.NextFloat())
-                    {
-                        agent.State = AgentState.Infected;
-                    }
-
-                    /*
-                    foreach (var neighbour in neighbours)
-                    {
-                        if (math.distancesq(neighbour.Position, position) < 2 * 2)
-                        {
-                            //neighbour.Factor;
-                        }
-                    }*/
-
                 }
             }).WithReadOnly(hashMap).ScheduleParallel(Dependency);
 
@@ -269,5 +262,36 @@ public class LifeTimeSystem : SystemBase
 
 
         m_Barrier.AddJobHandleForProducer(Dependency);
+    }
+
+    private static void NewMethod(in LocalToWorld localToWorld, ref Agent agent, in NativeMultiHashMap<int, AgentFactor> hashMap, in float3 position,
+        int offsetX, int offsetY)
+    {
+        //var hash = (int)math.hash(new int3(math.floor(localToWorld.Position / cellSize)));
+        var hash = GetPositionHash(localToWorld.Position, offsetX, offsetY);
+
+        var neighbours = hashMap.GetValuesForKey(hash);
+
+
+        //using (var enumerator = neighbours.GetEnumerator())
+        var enumerator = neighbours.GetEnumerator();
+        {
+            while (enumerator.MoveNext())
+            {
+                var neighbour = enumerator.Current;
+
+                if (neighbour.State != AgentState.Infected)
+                    continue;
+
+                if (math.distancesq(neighbour.Position, position) < 2 * 2)
+                {
+                    var transmissionRisk = agent.IsWearingMask ? .05f : 0.02f;
+
+                    agent.RiskFactor += transmissionRisk;
+                    //neighbour.Factor;
+                    //agent.f
+                }
+            }
+        }
     }
 }

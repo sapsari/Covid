@@ -13,6 +13,8 @@ public struct Agent : IComponentData
     public bool IsWearingMask;
     public float RiskFactor;
 
+    public float DeltaTime;
+
 
 
     // Add fields to your component here. Remember that:

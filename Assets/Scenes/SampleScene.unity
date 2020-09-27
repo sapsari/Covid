@@ -156,7 +156,7 @@ MonoBehaviour:
   Prefab: {fileID: 4925692215597130647, guid: 6b45a8472efa5af48bfeb71aa87b7152, type: 3}
   CountX: 100
   CountY: 100
-  InitialInfectedRatio: 0.25
+  InitialInfectedRatio: 0.025
 --- !u!4 &81587300
 Transform:
   m_ObjectHideFlags: 0

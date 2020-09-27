@@ -66,8 +66,11 @@ public class SpawnerSystem : SystemBase
                         var rand = random.NextFloat();
                         if (rand <= spawner.InitialInfectedRatio)
                             state = AgentState.Infected;
-                            
-                        commandBuffer.SetComponent(entityInQueryIndex, instance, new Agent { State = state });
+
+                        // minus because game stalls a second when it starts
+                        var dt = random.NextFloat() * Constants.TickTime * -1;
+
+                        commandBuffer.SetComponent(entityInQueryIndex, instance, new Agent { State = state, DeltaTime = dt });
 
 
                         if (state == AgentState.Healthy)
