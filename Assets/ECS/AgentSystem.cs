@@ -22,7 +22,7 @@ public class AgentSystem : SystemBase
         // types you want.
         
         
-        
+        /*
         Entities.ForEach((ref Translation translation, ref Agent agent) => {
             // Implement the work to perform for each entity here.
             // You should only access data that is local or that is a
@@ -36,18 +36,14 @@ public class AgentSystem : SystemBase
 
 
         }).Schedule();
-
+        */
 
 
         //var changeColorJobHandle =
-        Entities.ForEach((Entity entity, int nativeThreadIndex, ref Agent agent, ref URPMaterialPropertyBaseColor color) =>
+        Entities.ForEach((ref Agent agent, ref URPMaterialPropertyBaseColor color) =>
         {
-            //lifetime.Value -= deltaTime;
-
             if (agent.State == AgentState.Infected)
             {
-                //commandBuffer.DestroyEntity(nativeThreadIndex, entity);
-
                 // ColorCombo375 with Hex Colors #F1433F #F7E967 #A9CF54 #70B7BA #3D4C53
                 // #F1433F
                 color.Value.x = 241f / 255;

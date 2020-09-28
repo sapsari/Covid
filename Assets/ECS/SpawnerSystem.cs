@@ -24,6 +24,7 @@ public class SpawnerSystem : SystemBase
     // between recording the commands and instantiating the entities, but in practice this is usually not noticeable.
     //
     BeginInitializationEntityCommandBufferSystem m_EntityCommandBufferSystem;
+    bool spawned;
 
     protected override void OnCreate()
     {
@@ -33,6 +34,11 @@ public class SpawnerSystem : SystemBase
 
     protected override void OnUpdate()
     {
+        
+        if (spawned)
+            return;
+        spawned = true;
+
         // Instead of performing structural changes directly, a Job can add a command to an EntityCommandBuffer to
         // perform such changes on the main thread after the Job has finished. Command buffers allow you to perform
         // any, potentially costly, calculations on a worker thread, while queuing up the actual insertions and
@@ -64,7 +70,7 @@ public class SpawnerSystem : SystemBase
 
                         AgentState state = AgentState.Healthy;
                         var rand = random.NextFloat();
-                        if (rand <= spawner.InitialInfectedRatio)
+                        if (rand < spawner.InitialInfectedRatio)
                             state = AgentState.Infected;
 
                         // minus because game stalls a second when it starts
@@ -80,7 +86,7 @@ public class SpawnerSystem : SystemBase
                     }
                 }
 
-                commandBuffer.DestroyEntity(entityInQueryIndex, entity);
+                //commandBuffer.DestroyEntity(entityInQueryIndex, entity);
             }).ScheduleParallel();
 
         // SpawnJob runs in parallel with no sync point until the barrier system executes.

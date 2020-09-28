@@ -28,26 +28,11 @@ public static class Constants
     public const float TickTime = 1f;
 }
 
-public static class JobLogger
-{
-    [BurstDiscard] public static void Log<T>(T segment) => UnityEngine.Debug.Log(AppendToString(segment));
-
-    [BurstDiscard]
-    public static string AppendToString(params object[] parts)
-    {
-        System.Text.StringBuilder sb = new System.Text.StringBuilder();
-        sb.Clear();
-        for (int i = 0, len = parts.Length; i < len; i++) sb.Append(parts[i].ToString());
-        return sb.ToString();
-    }
-}
-
 
 // This system updates all entities in the scene with both a RotationSpeed and Rotation component.
 public class LifeTimeSystem : SystemBase
 {
     EntityCommandBufferSystem m_Barrier;
-    float deltaTime222;
 
     protected override void OnCreate()
     {
@@ -74,25 +59,25 @@ public class LifeTimeSystem : SystemBase
     {
         var commandBuffer = m_Barrier.CreateCommandBuffer().AsParallelWriter();
 
-        //var deltaTime = Time.DeltaTime;
-        this.deltaTime222 += Time.DeltaTime;
+        
+        int agentCount = -1;
+        Entities
+            //.WithAll<Spawner>()
+            .ForEach((in Spawner spawner) =>
+            {
+                //UnityEngine.Debug.Log($"spawner:{spawner.CountX},{spawner.CountY}");
+                agentCount = spawner.CountX * spawner.CountY;
+            }).Run();
 
-        //Debug.WriteLine($"dt:{deltaTime}");
-        //JobLogger.Log($"dt:{deltaTime}");
-
-        if (deltaTime222 > Constants.TickTime)
-            deltaTime222 -= Constants.TickTime;
-        //else
-            //return;
-
-        //NativeArray<Entity> entities = EntityManager.GetAllEntities(Allocator.Persistent);
+        //UnityEngine.Debug.Log($"agentCount:{agentCount}");
         
 
+        //int agentCount = 10000;
 
-        const int ASDASD = 100 * 100;
+        //const int ASDASD = 100 * 100;
         //const int cellSize = 2; // 2 meters
-        var hashMap = new NativeMultiHashMap<int, AgentFactor>(ASDASD, Allocator.TempJob);
-
+        var hashMap = new NativeMultiHashMap<int, AgentFactor>(agentCount, Allocator.TempJob);
+        
         var parallelHashMap = hashMap.AsParallelWriter();
         var hashPositionsJobHandle = Entities
             .WithName("HashPositionsJob")
@@ -115,15 +100,13 @@ public class LifeTimeSystem : SystemBase
             //.ScheduleParallel(JobHandle.CombineDependencies(Dependency,
               //  World.GetOrCreateSystem<StepPhysicsWorld>().FinalJobHandle);
 
-
-
         hashPositionsJobHandle.Complete();
 
-        //var parallelHashMap2 = hashMap.AsParallel();
-        //hashMap.as
+
 
         var dt = Time.DeltaTime;
-
+        var random = new Random(1);
+        
         var increaseInfectionJobHandle = Entities
             .WithName("IncreaseInfectionJob")
             .WithAll<Agent>()
@@ -136,12 +119,7 @@ public class LifeTimeSystem : SystemBase
                     {
                         agent.DeltaTime -= Constants.TickTime;
 
-
-                        var random = new Random(1);
-
                         var position = localToWorld.Position;
-
-
                         NewMethod(in localToWorld, ref agent, in hashMap, in position, 0, 0);
                         NewMethod(in localToWorld, ref agent, in hashMap, in position, 0, 1);
                         NewMethod(in localToWorld, ref agent, in hashMap, in position, 1, 1);
@@ -153,24 +131,14 @@ public class LifeTimeSystem : SystemBase
                         NewMethod(in localToWorld, ref agent, in hashMap, in position, -1, 0);
 
 
-                        if (agent.RiskFactor > random.NextFloat())
+                        if (random.NextFloat() < agent.RiskFactor)
                         {
                             agent.State = AgentState.Infected;
                         }
-
-                        /*
-                        foreach (var neighbour in neighbours)
-                        {
-                            if (math.distancesq(neighbour.Position, position) < 2 * 2)
-                            {
-                                //neighbour.Factor;
-                            }
-                        }*/
-
                     }
                 }
             }).WithReadOnly(hashMap).ScheduleParallel(Dependency);
-
+        
 
 
 
@@ -251,9 +219,10 @@ public class LifeTimeSystem : SystemBase
                 color.Value.w = 0f;
             }
         }).ScheduleParallel();
-
         */
+        
 
+        //Dependency = hashPositionsJobHandle;
         Dependency = increaseInfectionJobHandle;
         var disposeJobHandle = hashMap.Dispose(Dependency);
         Dependency = disposeJobHandle;
