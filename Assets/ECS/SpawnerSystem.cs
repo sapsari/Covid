@@ -1,9 +1,11 @@
+using Gists;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
 using Random = Unity.Mathematics.Random;
 
 // Systems can schedule work to run on worker threads.
@@ -26,10 +28,14 @@ public class SpawnerSystem : SystemBase
     BeginInitializationEntityCommandBufferSystem m_EntityCommandBufferSystem;
     bool spawned;
 
+    
+
     protected override void OnCreate()
     {
         // Cache the BeginInitializationEntityCommandBufferSystem in a field, so we don't have to create it every frame
         m_EntityCommandBufferSystem = World.GetOrCreateSystem<BeginInitializationEntityCommandBufferSystem>();
+
+
     }
 
     protected override void OnUpdate()
@@ -45,24 +51,34 @@ public class SpawnerSystem : SystemBase
         // deletions for later.
         var commandBuffer = m_EntityCommandBufferSystem.CreateCommandBuffer().AsParallelWriter();
 
+        var poissonsManaged = FastPoissonDiskSampling.Sampling(Vector2.zero, Vector2.one * 100f, 1.5f).ToArray();
+        var poissons = new NativeArray<Vector2>(poissonsManaged, Allocator.TempJob);
+
+
         // Schedule the job that will add Instantiate commands to the EntityCommandBuffer.
         // Since this job only runs on the first frame, we want to ensure Burst compiles it before running to get the best performance (3rd parameter of WithBurst)
         // The actual job will be cached once it is compiled (it will only get Burst compiled once).
-        Entities
+        var spawnerJob = Entities
             .WithName("SpawnerSystem")
             .WithBurst(FloatMode.Default, FloatPrecision.Standard, true)
             .ForEach((Entity entity, int entityInQueryIndex, ref Spawner spawner, in LocalToWorld location) =>
             {
                 var random = new Random(1);
 
-                for (var x = 0; x < spawner.CountX; x++)
+                //for (var x = 0; x < spawner.CountX; x++)
                 {
-                    for (var y = 0; y < spawner.CountY; y++)
+                    //for (var y = 0; y < spawner.CountY; y++)
+                    for (var i = 0; i < poissons.Length; i++)
                     {
+                        var poisson = poissons[i];
                         var instance = commandBuffer.Instantiate(entityInQueryIndex, spawner.Prefab);
 
                         // Place the instantiated in a grid with some noise
-                        var position = math.transform(location.Value, new float3(x * 1.3F, noise.cnoise(new float2(x, y) * 0.21F) * 2, y * 1.3F));
+                        const float dist = 1.7f;
+                        //var position = math.transform(location.Value, new float3(x * dist, noise.cnoise(new float2(x, y) * 0.21F) * 2, y * dist));
+                        var position = math.transform(location.Value, new float3(poisson.x, noise.cnoise(new float2(poisson.x, poisson.y) * 0.21F) * 2, poisson.y));
+
+
                         commandBuffer.SetComponent(entityInQueryIndex, instance, new Translation { Value = position });
                         commandBuffer.SetComponent(entityInQueryIndex, instance, new LifeTime { Value = random.NextFloat(1.0F, 10.0F) });
                         commandBuffer.SetComponent(entityInQueryIndex, instance, new RotationSpeed { RadiansPerSecond = math.radians(random.NextFloat(25.0F, 90.0F)) });
@@ -73,8 +89,8 @@ public class SpawnerSystem : SystemBase
                         if (rand < spawner.InitialInfectedRatio)
                             state = AgentState.Infected;
 
-                        // minus because game stalls a second when it starts
-                        var dt = random.NextFloat() * Constants.TickTime * -1;
+                        // -2 because game stalls a second when it starts
+                        var dt = random.NextFloat() * Constants.TickTime - 2;
 
                         commandBuffer.SetComponent(entityInQueryIndex, instance, new Agent { State = state, DeltaTime = dt });
 
@@ -87,7 +103,11 @@ public class SpawnerSystem : SystemBase
                 }
 
                 //commandBuffer.DestroyEntity(entityInQueryIndex, entity);
-            }).ScheduleParallel();
+            }).ScheduleParallel(Dependency);
+
+        Dependency = spawnerJob;
+        var disposeJobHandle = poissons.Dispose(Dependency);
+        Dependency = disposeJobHandle;
 
         // SpawnJob runs in parallel with no sync point until the barrier system executes.
         // When the barrier system executes we want to complete the SpawnJob and then play back the commands

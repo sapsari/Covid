@@ -66,7 +66,8 @@ public class LifeTimeSystem : SystemBase
             .ForEach((in Spawner spawner) =>
             {
                 //UnityEngine.Debug.Log($"spawner:{spawner.CountX},{spawner.CountY}");
-                agentCount = spawner.CountX * spawner.CountY;
+                //agentCount = spawner.CountX * spawner.CountY;
+                agentCount = spawner.TotalHealthy + spawner.TotalInfected + spawner.TotalRecovered + spawner.TotalDeceased;
             }).Run();
 
         //UnityEngine.Debug.Log($"agentCount:{agentCount}");
