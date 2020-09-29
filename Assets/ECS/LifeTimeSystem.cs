@@ -33,10 +33,12 @@ public static class Constants
 public class LifeTimeSystem : SystemBase
 {
     EntityCommandBufferSystem m_Barrier;
+    HUD hud;
 
     protected override void OnCreate()
     {
         m_Barrier = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
+        this.hud = UnityEngine.GameObject.FindObjectOfType<HUD>();
     }
 
     static int GetPositionHash(float3 position, int offsetX = 0, int offsetY = 0)
@@ -61,6 +63,9 @@ public class LifeTimeSystem : SystemBase
 
         
         int agentCount = -1;
+        int healthyCount = -1;
+        int infectedCount = -1;
+
         Entities
             //.WithAll<Spawner>()
             .ForEach((in Spawner spawner) =>
@@ -68,10 +73,25 @@ public class LifeTimeSystem : SystemBase
                 //UnityEngine.Debug.Log($"spawner:{spawner.CountX},{spawner.CountY}");
                 //agentCount = spawner.CountX * spawner.CountY;
                 agentCount = spawner.TotalHealthy + spawner.TotalInfected + spawner.TotalRecovered + spawner.TotalDeceased;
+
+                healthyCount = spawner.TotalHealthy;
+                infectedCount = spawner.TotalInfected;
             }).Run();
 
+        hud.CountHealthy = healthyCount;
+        hud.CountInfected = infectedCount;
+
+
+        EntityQuery query = GetEntityQuery(
+            ComponentType.ReadOnly<Agent>()
+        );
+        //query.AddSharedComponentFilter<>
+
+        int count = query.CalculateEntityCount();
+
+
         //UnityEngine.Debug.Log($"agentCount:{agentCount}");
-        
+
 
         //int agentCount = 10000;
 
@@ -221,7 +241,7 @@ public class LifeTimeSystem : SystemBase
             }
         }).ScheduleParallel();
         */
-        
+
 
         //Dependency = hashPositionsJobHandle;
         Dependency = increaseInfectionJobHandle;

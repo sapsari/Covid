@@ -51,7 +51,9 @@ public class SpawnerSystem : SystemBase
         // deletions for later.
         var commandBuffer = m_EntityCommandBufferSystem.CreateCommandBuffer().AsParallelWriter();
 
-        var poissonsManaged = FastPoissonDiskSampling.Sampling(Vector2.zero, Vector2.one * 100f, 1.5f).ToArray();
+        const float minDist = 1.5f;
+
+        var poissonsManaged = FastPoissonDiskSampling.Sampling(Vector2.zero, Vector2.one * 100f * minDist, minDist).ToArray();
         var poissons = new NativeArray<Vector2>(poissonsManaged, Allocator.TempJob);
 
 
