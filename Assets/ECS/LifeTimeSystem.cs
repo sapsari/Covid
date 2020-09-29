@@ -78,16 +78,8 @@ public class LifeTimeSystem : SystemBase
                 infectedCount = spawner.TotalInfected;
             }).Run();
 
-        hud.CountHealthy = healthyCount;
-        hud.CountInfected = infectedCount;
+        
 
-
-        EntityQuery query = GetEntityQuery(
-            ComponentType.ReadOnly<Agent>()
-        );
-        //query.AddSharedComponentFilter<>
-
-        int count = query.CalculateEntityCount();
 
 
         //UnityEngine.Debug.Log($"agentCount:{agentCount}");
@@ -98,8 +90,13 @@ public class LifeTimeSystem : SystemBase
         //const int ASDASD = 100 * 100;
         //const int cellSize = 2; // 2 meters
         var hashMap = new NativeMultiHashMap<int, AgentFactor>(agentCount, Allocator.TempJob);
+
+        var healthyQueue = new NativeQueue<int>(Allocator.TempJob);
+        var infectedQueue = new NativeQueue<int>(Allocator.TempJob);
         
         var parallelHashMap = hashMap.AsParallelWriter();
+        var healthyQueueWriter = healthyQueue.AsParallelWriter();
+        var infectedQueueWriter = infectedQueue.AsParallelWriter();
         var hashPositionsJobHandle = Entities
             .WithName("HashPositionsJob")
             .WithAll<Agent>()
@@ -117,6 +114,13 @@ public class LifeTimeSystem : SystemBase
                     State = agent.State,
                 };
                 parallelHashMap.Add(hash, agentFactor);
+
+                if (agent.State == AgentState.Healthy)
+                    healthyQueueWriter.Enqueue(entityInQueryIndex);
+                else
+                    infectedQueueWriter.Enqueue(entityInQueryIndex);
+
+
             }).ScheduleParallel(Dependency);
             //.ScheduleParallel(JobHandle.CombineDependencies(Dependency,
               //  World.GetOrCreateSystem<StepPhysicsWorld>().FinalJobHandle);
@@ -124,6 +128,10 @@ public class LifeTimeSystem : SystemBase
         hashPositionsJobHandle.Complete();
 
 
+        healthyCount = healthyQueue.Count;
+        infectedCount = infectedQueue.Count;
+        hud.CountHealthy = healthyCount;
+        hud.CountInfected = infectedCount;
 
         var dt = Time.DeltaTime;
         var random = new Random(1);
@@ -247,6 +255,11 @@ public class LifeTimeSystem : SystemBase
         Dependency = increaseInfectionJobHandle;
         var disposeJobHandle = hashMap.Dispose(Dependency);
         Dependency = disposeJobHandle;
+
+        var disposeJobHandle2 = healthyQueue.Dispose(Dependency);
+        Dependency = disposeJobHandle2;
+        var disposeJobHandle3 = infectedQueue.Dispose(Dependency);
+        Dependency = disposeJobHandle3;
 
 
 
