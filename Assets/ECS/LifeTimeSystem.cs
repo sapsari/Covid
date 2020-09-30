@@ -34,21 +34,24 @@ public class LifeTimeSystem : SystemBase
 {
     EntityCommandBufferSystem m_Barrier;
     HUD hud;
+    DrawLine drawLine;
 
     protected override void OnCreate()
     {
         m_Barrier = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
         this.hud = UnityEngine.GameObject.FindObjectOfType<HUD>();
+        this.drawLine = UnityEngine.GameObject.FindObjectOfType<DrawLine>();
     }
 
-    static int GetPositionHash(float3 position, int offsetX = 0, int offsetY = 0)
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+    public static int GetPositionHash(float3 position, int offsetX = 0, int offsetY = 0)
     {
         //var hash = (int)math.hash(new int3(math.floor(position / cellSize)));
 
-        var x = (int)math.floor(position.x / Constants.CellSize) + offsetX;
-        var z = (int)math.floor(position.z / Constants.CellSize) + offsetY;
+        var x = (int)math.floor(position.x * 1f / Constants.CellSize) + offsetX;
+        var z = (int)math.floor(position.z * 1f / Constants.CellSize) + offsetY;
 
-        const int hashOffset = 10000;
+        const int hashOffset = 16384;
 
         var hash = x * hashOffset + z;
 
@@ -135,6 +138,9 @@ public class LifeTimeSystem : SystemBase
 
         var dt = Time.DeltaTime;
         var random = new Random(1);
+
+        var hashmapLines = drawLine.hashmap;
+        
         
         var increaseInfectionJobHandle = Entities
             .WithName("IncreaseInfectionJob")
@@ -149,15 +155,15 @@ public class LifeTimeSystem : SystemBase
                         agent.DeltaTime -= Constants.TickTime;
 
                         var position = localToWorld.Position;
-                        NewMethod(in localToWorld, ref agent, in hashMap, in position, 0, 0);
-                        NewMethod(in localToWorld, ref agent, in hashMap, in position, 0, 1);
-                        NewMethod(in localToWorld, ref agent, in hashMap, in position, 1, 1);
-                        NewMethod(in localToWorld, ref agent, in hashMap, in position, -1, 1);
-                        NewMethod(in localToWorld, ref agent, in hashMap, in position, 0, -1);
-                        NewMethod(in localToWorld, ref agent, in hashMap, in position, 1, -1);
-                        NewMethod(in localToWorld, ref agent, in hashMap, in position, -1, -1);
-                        NewMethod(in localToWorld, ref agent, in hashMap, in position, 1, 0);
-                        NewMethod(in localToWorld, ref agent, in hashMap, in position, -1, 0);
+                        NewMethod(in localToWorld, ref agent, in hashMap, in hashmapLines, in position, 0, 0);
+                        NewMethod(in localToWorld, ref agent, in hashMap, in hashmapLines, in position, 0, 1);
+                        NewMethod(in localToWorld, ref agent, in hashMap, in hashmapLines, in position, 1, 1);
+                        NewMethod(in localToWorld, ref agent, in hashMap, in hashmapLines, in position, -1, 1);
+                        NewMethod(in localToWorld, ref agent, in hashMap, in hashmapLines, in position, 0, -1);
+                        NewMethod(in localToWorld, ref agent, in hashMap, in hashmapLines, in position, 1, -1);
+                        NewMethod(in localToWorld, ref agent, in hashMap, in hashmapLines, in position, -1, -1);
+                        NewMethod(in localToWorld, ref agent, in hashMap, in hashmapLines, in position, 1, 0);
+                        NewMethod(in localToWorld, ref agent, in hashMap, in hashmapLines, in position, -1, 0);
 
 
                         if (random.NextFloat() < agent.RiskFactor)
@@ -166,7 +172,7 @@ public class LifeTimeSystem : SystemBase
                         }
                     }
                 }
-            }).WithReadOnly(hashMap).ScheduleParallel(Dependency);
+            }).WithReadOnly(hashMap).WithReadOnly(hashmapLines).ScheduleParallel(Dependency);
         
 
 
@@ -267,11 +273,40 @@ public class LifeTimeSystem : SystemBase
         m_Barrier.AddJobHandleForProducer(Dependency);
     }
 
-    private static void NewMethod(in LocalToWorld localToWorld, ref Agent agent, in NativeMultiHashMap<int, AgentFactor> hashMap, in float3 position,
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+    private static bool Intersects(float3 p1, float3 p2, float4 p34)
+    {
+        // https://github.com/setchi/Unity-LineSegmentsIntersection/blob/master/Assets/LineSegmentIntersection/Scripts/Math2d.cs
+
+        var d = (p2.x - p1.x) * (p34.w - p34.y) - (p2.z - p1.z) * (p34.z - p34.x);
+
+        if (d == 0.0f)
+            return false;
+
+        var u = ((p34.x - p1.x) * (p34.w - p34.y) - (p34.y - p1.z) * (p34.z - p34.x)) / d;
+
+        if (u < 0.0f || u > 1.0f )
+            return false;
+
+        var v = ((p34.x - p1.x) * (p2.z - p1.z) - (p34.y - p1.z) * (p2.x - p1.x)) / d;
+
+        if (v < 0.0f || v > 1.0f)
+            return false;
+
+        return true;
+    }
+
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+    private static void NewMethod(in LocalToWorld localToWorld, ref Agent agent,
+        in NativeMultiHashMap<int, AgentFactor> hashMap,
+        in NativeMultiHashMap<int, float4> hashMapLines,
+        
+        in float3 position,
         int offsetX, int offsetY)
     {
         //var hash = (int)math.hash(new int3(math.floor(localToWorld.Position / cellSize)));
         var hash = GetPositionHash(localToWorld.Position, offsetX, offsetY);
+        var hashLines = GetPositionHash(localToWorld.Position);
 
         var neighbours = hashMap.GetValuesForKey(hash);
 
@@ -288,11 +323,30 @@ public class LifeTimeSystem : SystemBase
 
                 if (math.distancesq(neighbour.Position, position) < 2 * 2)
                 {
-                    var transmissionRisk = agent.IsWearingMask ? .05f : 0.02f;
+                    var isBlocked = false;
 
-                    agent.RiskFactor += transmissionRisk;
-                    //neighbour.Factor;
-                    //agent.f
+                    var lines = hashMapLines.GetValuesForKey(hashLines);
+
+                    var enumeratorLines = lines.GetEnumerator();
+                    while (enumeratorLines.MoveNext())
+                    {
+                        var line = enumeratorLines.Current;
+
+                        if(Intersects(position, neighbour.Position, line))
+                        {
+                            isBlocked = true;
+                            break;
+                        }
+                    }
+
+                    if (!isBlocked)
+                    {
+                        var transmissionRisk = agent.IsWearingMask ? .05f : 0.02f;
+
+                        agent.RiskFactor += transmissionRisk;
+                        //neighbour.Factor;
+                        //agent.f
+                    }
                 }
             }
         }

@@ -1,19 +1,24 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class DrawLine : MonoBehaviour
 {
     public GameObject LinePrefab;
-    GameObject currentLine;
 
     LineRenderer lineRenderer;
-    EdgeCollider2D edgeCollider;
-    public List<Vector3> fingerPositions;
+    //public List<Vector3> fingerPositions;
+    Vector3 lastPos;
 
-    Plane plane;
 
     Camera cam;
+    Plane plane;
+
+    public List<LineRenderer> Lines;
+
+    internal NativeMultiHashMap<int, float4> hashmap;
 
     // Start is called before the first frame update
     void Start()
@@ -21,6 +26,8 @@ public class DrawLine : MonoBehaviour
         cam = Camera.main;
 
         plane = GetPlane();
+
+        hashmap = new NativeMultiHashMap<int, float4>(4, Allocator.Persistent);
     }
 
     static Plane GetPlane()
@@ -80,21 +87,64 @@ public class DrawLine : MonoBehaviour
             //var newPos = cam.ScreenToWorldPoint(Input.mousePosition);
             var newPos = GetPosition();
 
-            Debug.Log("pos:" + newPos);
+            //Debug.Log("pos:" + newPos);
 
-            if (Vector3.Distance(newPos, fingerPositions[fingerPositions.Count - 1]) > 1.05f)
+            //if (Vector3.Distance(newPos, fingerPositions[fingerPositions.Count - 1]) > 1.05f)
+            if (Vector3.Distance(newPos, lastPos) > 1.05f)
             {
                 UpdateLine(newPos);
             }
+        }
+        else
+        {
+            if (lineRenderer != null)
+            {
+                FinishLine();
+                lineRenderer = null;
+            }
+        }
+    }
+
+    void FinishLine()
+    {
+
+        // skip first point on purpose
+        for (int i = 1; i < lineRenderer.positionCount - 1; i++)
+        {
+            var p1 = lineRenderer.GetPosition(i);
+            var p2 = lineRenderer.GetPosition(i + 1);
+
+            var mid = (p1 + p2) * .5f;
+
+            var hash = LifeTimeSystem.GetPositionHash(mid);
+            var value = new float4(p1.x, p1.z, p2.x, p2.z);
+
+            hashmap.Add(hash, value);
+
+            hashmap.Add(LifeTimeSystem.GetPositionHash(mid, 0, 1), value);
+            hashmap.Add(LifeTimeSystem.GetPositionHash(mid, 0, -1), value);
+            hashmap.Add(LifeTimeSystem.GetPositionHash(mid, 1, 0), value);
+            hashmap.Add(LifeTimeSystem.GetPositionHash(mid, 1, 1), value);
+            hashmap.Add(LifeTimeSystem.GetPositionHash(mid, 1, -1), value);
+            hashmap.Add(LifeTimeSystem.GetPositionHash(mid, -1, 0), value);
+            hashmap.Add(LifeTimeSystem.GetPositionHash(mid, -1, 1), value);
+            hashmap.Add(LifeTimeSystem.GetPositionHash(mid, -1, -1), value);
         }
     }
 
     void CreateLine()
     {
-        currentLine = Instantiate(LinePrefab);
+        var currentLine = Instantiate(LinePrefab);
 
         lineRenderer = currentLine.GetComponent<LineRenderer>();
+        //lineRenderer.set
 
+        var pos = GetPosition();
+        lineRenderer.SetPosition(0, pos);
+        lineRenderer.SetPosition(1, pos);
+        lastPos = pos;
+
+        /*
         fingerPositions.Clear();
         //fingerPositions.Add(cam.ScreenToWorldPoint(Input.mousePosition));
         //fingerPositions.Add(cam.ScreenToWorldPoint(Input.mousePosition));
@@ -102,14 +152,17 @@ public class DrawLine : MonoBehaviour
         fingerPositions.Add(GetPosition());
 
         lineRenderer.SetPosition(0, fingerPositions[0]);
-        lineRenderer.SetPosition(1, fingerPositions[1]);
+        lineRenderer.SetPosition(1, fingerPositions[1]);*/
+
+        Lines.Add(lineRenderer);
     }
 
     void UpdateLine(Vector3 newPos)
     {
-        fingerPositions.Add(newPos);
+        //fingerPositions.Add(newPos);
         lineRenderer.positionCount++;
         lineRenderer.SetPosition(lineRenderer.positionCount - 1, newPos);
+        lastPos = newPos;
 
     }
 }
