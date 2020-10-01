@@ -6,6 +6,7 @@ public class HUD : MonoBehaviour
 {
     public UnityEngine.UI.Text TextHealthy;
     public UnityEngine.UI.Text TextInfected;
+    public UnityEngine.UI.Text TextFPS;
 
     public int CountHealthy;
     public int CountInfected;
@@ -30,5 +31,7 @@ public class HUD : MonoBehaviour
 
         TextHealthy.text = CountHealthy.ToString();
         TextInfected.text = CountInfected.ToString();
+
+        TextFPS.text = ((int)Mathf.Floor(1 / Time.deltaTime)).ToString();
     }
 }

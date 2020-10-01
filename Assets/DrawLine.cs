@@ -193,11 +193,12 @@ public class DrawLine : MonoBehaviour
     }
 
 
-    public void Generate(Vector3[] points)
+    public void Generate(Vector3[] points, int length)
     {
         CreateLine(points[0]);
 
-        for (var i = 1; i < points.Length; i++)
+        //for (var i = 1; i < points.Length; i++)
+        for (var i = 1; i < length; i++)
         {
             UpdateLine(points[i]);
         }
@@ -208,8 +209,8 @@ public class DrawLine : MonoBehaviour
 
     public void GenerateLine()
     {
-        var size = Random.Range(8, 18);
-        var angle = Random.Range(0, 6);
+        var size = Random.Range(20, 60);
+        var angle = Random.Range(0f, .2f);
         var straighten = Random.value;
 
 
@@ -218,18 +219,28 @@ public class DrawLine : MonoBehaviour
         var dir = Random.Range(0, 360);
 
         var points = new Vector3[size];
+        //var points = new List<Vector3>(size);
         points[0] = new Vector3(posx, 0, posy);
 
         var unitVector = new Vector3(1, 0, 1);
 
-        for (int i = 1; i < size; i++)
+
+        int i;
+        for (i = 1; i < size; i++)
         {
             var curdir = dir + angle * i * straighten * i;
             var dirVec = Quaternion.Euler(0, curdir, 0) * unitVector;
             points[i] = points[i - 1] + dirVec * PointDistance;
+
+            const int offset = 10;
+
+            if (points[i].x < -offset || points[i].z < -offset ||
+                    points[i].x > SpawnerSystem.Area.x + offset ||
+                    points[i].z > SpawnerSystem.Area.y + offset)
+                break;
         }
 
-        Generate(points);
+        Generate(points, i);
     }
 }
 
