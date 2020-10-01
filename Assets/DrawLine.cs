@@ -30,6 +30,11 @@ public class DrawLine : MonoBehaviour
         hashmap = new NativeMultiHashMap<int, float4>(4, Allocator.Persistent);
     }
 
+    private void OnDestroy()
+    {
+        hashmap.Dispose();
+    }
+
     static Plane GetPlane()
     {
         var p = GameObject.Find("Plane");
@@ -90,7 +95,7 @@ public class DrawLine : MonoBehaviour
             //Debug.Log("pos:" + newPos);
 
             //if (Vector3.Distance(newPos, fingerPositions[fingerPositions.Count - 1]) > 1.05f)
-            if (Vector3.Distance(newPos, lastPos) > 1.05f)
+            if (Vector3.Distance(newPos, lastPos) > 1f)
             {
                 UpdateLine(newPos);
             }
@@ -132,7 +137,7 @@ public class DrawLine : MonoBehaviour
         }
     }
 
-    void CreateLine()
+    void CreateLine(Vector3? p1 = null)
     {
         var currentLine = Instantiate(LinePrefab);
 
@@ -164,5 +169,15 @@ public class DrawLine : MonoBehaviour
         lineRenderer.SetPosition(lineRenderer.positionCount - 1, newPos);
         lastPos = newPos;
 
+    }
+
+
+    public void Generate(Vector3[] points)
+    {
+        CreateLine();
+
+        UpdateLine(points[3]);
+
+        FinishLine();
     }
 }

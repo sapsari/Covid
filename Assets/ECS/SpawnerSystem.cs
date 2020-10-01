@@ -94,7 +94,7 @@ public class SpawnerSystem : SystemBase
                             state = AgentState.Infected;
 
                         // -2 because game stalls a second when it starts
-                        var dt = random.NextFloat() * Constants.TickTime - 2;
+                        var dt = random.NextFloat() * Constants.TickTime - Constants.TickDelayTime;
 
                         commandBuffer.SetComponent(entityInQueryIndex, instance, new Agent { State = state, DeltaTime = dt });
 

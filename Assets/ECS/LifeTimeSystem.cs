@@ -16,16 +16,21 @@ public struct LifeTime : IComponentData
 
 public struct AgentFactor
 {
-    public int Index;
+    //public int Index;
     public float3 Position;
-    public float Factor;
-    public AgentState State;
+    //public float Factor;
+    //public AgentState State;
 }
 
 public static class Constants
 {
     public const float CellSize = 2f;
-    public const float TickTime = 1f;
+    public const float TickTime = 5f;
+    public const float TickDelayTime = 2f; // because game stalls on start
+
+    public const float TransmissionDistance = 3f; // 2 meters + 1 meter (for agent's own radius)
+    public const float TransmissionRiskWithMask = .02f; // %2
+    public const float TransmissionRiskWithoutMask = .05f; // %5
 }
 
 
@@ -105,23 +110,27 @@ public class LifeTimeSystem : SystemBase
             .WithAll<Agent>()
             .ForEach((int entityInQueryIndex, in LocalToWorld localToWorld, in Agent agent) =>
             {
-                var position = localToWorld.Position;
-                //var hash = (int)math.hash(new int3(math.floor(localToWorld.Position / cellSize)));
-                var hash = GetPositionHash(localToWorld.Position);
-                var riskFactor = agent.State == AgentState.Infected ? 0.01f : 0f;
-                var agentFactor = new AgentFactor
-                {
-                    Index = entityInQueryIndex,
-                    Position = position,
-                    Factor = riskFactor,
-                    State = agent.State,
-                };
-                parallelHashMap.Add(hash, agentFactor);
+                
 
                 if (agent.State == AgentState.Healthy)
                     healthyQueueWriter.Enqueue(entityInQueryIndex);
                 else
+                {
                     infectedQueueWriter.Enqueue(entityInQueryIndex);
+
+                    var position = localToWorld.Position;
+                    //var hash = (int)math.hash(new int3(math.floor(localToWorld.Position / cellSize)));
+                    var hash = GetPositionHash(localToWorld.Position);
+                    //var riskFactor = agent.State == AgentState.Infected ? 0.01f : 0f;
+                    var agentFactor = new AgentFactor
+                    {
+                        //Index = entityInQueryIndex,
+                        Position = position,
+                        //Factor = riskFactor,
+                        //State = agent.State,
+                    };
+                    parallelHashMap.Add(hash, agentFactor);
+                }
 
 
             }).ScheduleParallel(Dependency);
@@ -318,10 +327,10 @@ public class LifeTimeSystem : SystemBase
             {
                 var neighbour = enumerator.Current;
 
-                if (neighbour.State != AgentState.Infected)
-                    continue;
+                //if (neighbour.State != AgentState.Infected)
+                    //continue;
 
-                if (math.distancesq(neighbour.Position, position) < 2 * 2)
+                if (math.distancesq(neighbour.Position, position) < Constants.TransmissionDistance * Constants.TransmissionDistance)
                 {
                     var isBlocked = false;
 
@@ -341,7 +350,8 @@ public class LifeTimeSystem : SystemBase
 
                     if (!isBlocked)
                     {
-                        var transmissionRisk = agent.IsWearingMask ? .05f : 0.02f;
+                        var transmissionRisk = agent.IsWearingMask ? 
+                            Constants.TransmissionRiskWithMask : Constants.TransmissionRiskWithoutMask;
 
                         agent.RiskFactor += transmissionRisk;
                         //neighbour.Factor;
