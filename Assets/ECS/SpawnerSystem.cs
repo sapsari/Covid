@@ -38,6 +38,12 @@ public class SpawnerSystem : SystemBase
 
     }
 
+    const float minDist = 1.5f;
+    //const float areaSize = 50;
+    const float areaSize = 120;
+    public static Vector2 Area = Vector2.one * areaSize * minDist;
+
+
     protected override void OnUpdate()
     {
         
@@ -51,11 +57,8 @@ public class SpawnerSystem : SystemBase
         // deletions for later.
         var commandBuffer = m_EntityCommandBufferSystem.CreateCommandBuffer().AsParallelWriter();
 
-        const float minDist = 1.5f;
-        //const float areaSize = 120;
-        const float areaSize = 50;
-
-        var poissonsManaged = FastPoissonDiskSampling.Sampling(Vector2.zero, Vector2.one * areaSize * minDist, minDist).ToArray();
+        
+        var poissonsManaged = FastPoissonDiskSampling.Sampling(Vector2.zero, Area, minDist).ToArray();
         var poissons = new NativeArray<Vector2>(poissonsManaged, Allocator.TempJob);
 
 
@@ -68,6 +71,7 @@ public class SpawnerSystem : SystemBase
             .ForEach((Entity entity, int entityInQueryIndex, ref Spawner spawner, in LocalToWorld location) =>
             {
                 var random = new Random(1);
+                spawner.Area = Vector2.one * areaSize * minDist;
 
                 //for (var x = 0; x < spawner.CountX; x++)
                 {

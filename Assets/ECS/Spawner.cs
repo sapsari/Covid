@@ -1,4 +1,5 @@
 using Unity.Entities;
+using UnityEngine;
 
 // ReSharper disable once InconsistentNaming
 public struct Spawner : IComponentData
@@ -14,4 +15,6 @@ public struct Spawner : IComponentData
     public int TotalDeceased;
 
     public float InitialInfectedRatio;
+
+    public Vector2 Area;
 }

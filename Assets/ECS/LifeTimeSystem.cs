@@ -24,11 +24,11 @@ public struct AgentFactor
 
 public static class Constants
 {
-    public const float CellSize = 2f;
+    public const float CellSize = TransmissionDistance;
     public const float TickTime = 5f;
     public const float TickDelayTime = 2f; // because game stalls on start
 
-    public const float TransmissionDistance = 3f; // 2 meters + 1 meter (for agent's own radius)
+    public const float TransmissionDistance = 3f; // 2 meters + 1 meter (agent's own radius is 1mt)
     public const float TransmissionRiskWithMask = .02f; // %2
     public const float TransmissionRiskWithoutMask = .05f; // %5
 }

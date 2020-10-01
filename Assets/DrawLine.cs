@@ -1,8 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
+using Random = UnityEngine.Random;
+
 
 public class DrawLine : MonoBehaviour
 {
@@ -28,6 +31,16 @@ public class DrawLine : MonoBehaviour
         plane = GetPlane();
 
         hashmap = new NativeMultiHashMap<int, float4>(4, Allocator.Persistent);
+
+
+        GenerateLine();
+        GenerateLine();
+        GenerateLine();
+        GenerateLine();
+        GenerateLine();
+        GenerateLine();
+        GenerateLine();
+        GenerateLine();
     }
 
     private void OnDestroy()
@@ -79,6 +92,8 @@ public class DrawLine : MonoBehaviour
             return Vector3.positiveInfinity;
     }
 
+    const float PointDistance = 1f;
+
     // Update is called once per frame
     void Update()
     {
@@ -95,7 +110,7 @@ public class DrawLine : MonoBehaviour
             //Debug.Log("pos:" + newPos);
 
             //if (Vector3.Distance(newPos, fingerPositions[fingerPositions.Count - 1]) > 1.05f)
-            if (Vector3.Distance(newPos, lastPos) > 1f)
+            if (Vector3.Distance(newPos, lastPos) > PointDistance)
             {
                 UpdateLine(newPos);
             }
@@ -122,7 +137,13 @@ public class DrawLine : MonoBehaviour
             var mid = (p1 + p2) * .5f;
 
             var hash = LifeTimeSystem.GetPositionHash(mid);
-            var value = new float4(p1.x, p1.z, p2.x, p2.z);
+
+            var pp1 = 2 * p1 - mid;
+            var pp2 = 2 * p2 - mid;
+
+            //var value = new float4(p1.x, p1.z, p2.x, p2.z);
+            // use wider lines to prevent floating point errors
+            var value = new float4(pp1.x, pp1.z, pp2.x, pp2.z);
 
             hashmap.Add(hash, value);
 
@@ -144,7 +165,7 @@ public class DrawLine : MonoBehaviour
         lineRenderer = currentLine.GetComponent<LineRenderer>();
         //lineRenderer.set
 
-        var pos = GetPosition();
+        var pos = p1 ?? GetPosition();
         lineRenderer.SetPosition(0, pos);
         lineRenderer.SetPosition(1, pos);
         lastPos = pos;
@@ -174,10 +195,41 @@ public class DrawLine : MonoBehaviour
 
     public void Generate(Vector3[] points)
     {
-        CreateLine();
+        CreateLine(points[0]);
 
-        UpdateLine(points[3]);
+        for (var i = 1; i < points.Length; i++)
+        {
+            UpdateLine(points[i]);
+        }
 
         FinishLine();
     }
+
+
+    public void GenerateLine()
+    {
+        var size = Random.Range(8, 18);
+        var angle = Random.Range(0, 6);
+        var straighten = Random.value;
+
+
+        var posx = Random.Range(0f, SpawnerSystem.Area.x);
+        var posy = Random.Range(0f, SpawnerSystem.Area.y);
+        var dir = Random.Range(0, 360);
+
+        var points = new Vector3[size];
+        points[0] = new Vector3(posx, 0, posy);
+
+        var unitVector = new Vector3(1, 0, 1);
+
+        for (int i = 1; i < size; i++)
+        {
+            var curdir = dir + angle * i * straighten * i;
+            var dirVec = Quaternion.Euler(0, curdir, 0) * unitVector;
+            points[i] = points[i - 1] + dirVec * PointDistance;
+        }
+
+        Generate(points);
+    }
 }
+
