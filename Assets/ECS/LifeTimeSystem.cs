@@ -31,6 +31,8 @@ public static class Constants
     public const float TransmissionDistance = 3f; // 2 meters + 1 meter (agent's own radius is 1mt)
     public const float TransmissionRiskWithMask = .02f; // %2
     public const float TransmissionRiskWithoutMask = .05f; // %5
+
+    public const float InfectionHighlightTime = 1.2f;
 }
 
 
@@ -178,6 +180,7 @@ public class LifeTimeSystem : SystemBase
                         if (random.NextFloat() < agent.RiskFactor)
                         {
                             agent.State = AgentState.Infected;
+                            agent.InfectionHighlightTime = Constants.InfectionHighlightTime;
                         }
                     }
                 }

@@ -20,8 +20,8 @@ public class AgentSystem : SystemBase
         // meaning it will process all entities in the world that have both
         // Translation and Rotation components. Change it to process the component
         // types you want.
-        
-        
+
+
         /*
         Entities.ForEach((ref Translation translation, ref Agent agent) => {
             // Implement the work to perform for each entity here.
@@ -38,10 +38,12 @@ public class AgentSystem : SystemBase
         }).Schedule();
         */
 
+        var dt = Time.DeltaTime;
 
         //var changeColorJobHandle =
         Entities.ForEach((ref Agent agent, ref URPMaterialPropertyBaseColor color) =>
         {
+
             if (agent.State == AgentState.Infected)
             {
                 // ColorCombo375 with Hex Colors #F1433F #F7E967 #A9CF54 #70B7BA #3D4C53
@@ -50,6 +52,16 @@ public class AgentSystem : SystemBase
                 color.Value.y = 67f / 255;
                 color.Value.z = 63f / 255;
                 color.Value.w = 0f;
+
+                if (agent.InfectionHighlightTime > 0)
+                {
+                    agent.InfectionHighlightTime -= dt;
+
+                    var ratio = 1 - agent.InfectionHighlightTime / Constants.InfectionHighlightTime;
+
+                    color.Value.y *= ratio;
+                    color.Value.z *= ratio;
+                }
             }
         }).ScheduleParallel();
     }

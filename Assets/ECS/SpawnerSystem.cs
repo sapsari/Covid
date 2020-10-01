@@ -62,6 +62,8 @@ public class SpawnerSystem : SystemBase
         var poissons = new NativeArray<Vector2>(poissonsManaged, Allocator.TempJob);
 
 
+        
+
         // Schedule the job that will add Instantiate commands to the EntityCommandBuffer.
         // Since this job only runs on the first frame, we want to ensure Burst compiles it before running to get the best performance (3rd parameter of WithBurst)
         // The actual job will be cached once it is compiled (it will only get Burst compiled once).

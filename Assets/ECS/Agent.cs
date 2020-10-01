@@ -15,6 +15,8 @@ public struct Agent : IComponentData
 
     public float DeltaTime;
 
+    public float InfectionHighlightTime;
+
 
 
     // Add fields to your component here. Remember that:
