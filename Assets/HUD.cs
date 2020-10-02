@@ -126,7 +126,14 @@ public class HUD : MonoBehaviour
 
     public void EndSim()
     {
-        TextScore.text = TextHealthy.text;
+        var maskMultiplier = wearingMask ? 1 : 2;
+        var initialRatioMultiplier = initialInfectedRatioState + 1;
+
+        var healthy = int.Parse(TextHealthy.text);
+
+        var score = healthy * maskMultiplier * initialRatioMultiplier;
+
+        TextScore.text = score.ToString();
 
         CanvasIntro.enabled = false;
         CanvasGame.enabled = false;
