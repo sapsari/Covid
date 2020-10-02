@@ -52,6 +52,14 @@ public class SpawnerSystem : SystemBase
     {
         spawned = false;
     }
+    
+    public void SetIsWearingMask(bool val)
+    {
+        Entities.WithAll<Spawner>().ForEach((ref Spawner spawner) =>
+        {
+            spawner.WearingMask = val;
+        }).Run();
+    }
 
 
     protected override void OnUpdate()
@@ -112,7 +120,12 @@ public class SpawnerSystem : SystemBase
                         // -2 because game stalls a second when it starts
                         var dt = random.NextFloat() * Constants.TickTime - Constants.TickDelayTime;
 
-                        commandBuffer.SetComponent(entityInQueryIndex, instance, new Agent { State = state, DeltaTime = dt });
+                        commandBuffer.SetComponent(entityInQueryIndex, instance, new Agent
+                        {
+                            State = state,
+                            DeltaTime = dt,
+                            IsWearingMask = spawner.WearingMask,
+                        }); ;
 
 
                         if (state == AgentState.Healthy)

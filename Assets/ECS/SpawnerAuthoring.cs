@@ -32,6 +32,7 @@ public class SpawnerAuthoring : MonoBehaviour, IDeclareReferencedPrefabs, IConve
             CountX = CountX,
             CountY = CountY,
             InitialInfectedRatio = InitialInfectedRatio,
+            WearingMask = true,
         };
         dstManager.AddComponentData(entity, spawnerData);
     }

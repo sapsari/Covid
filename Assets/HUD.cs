@@ -5,18 +5,29 @@ using Unity.Entities;
 using UnityEngine;
 using UnityEngine.UI;
 
+
+public enum GameState { Splash, Intro, Game, Score }
+
 public class HUD : MonoBehaviour
 {
-    public Text TextHealthy;
-    public Text TextInfected;
-    public Text TextFPS;
-
     public Canvas CanvasGame;
     public Canvas CanvasBegin;
     public Canvas CanvasEnd;
 
+    public Text TextHealthy;
+    public Text TextInfected;
+    public Text TextFPS;
+    public Text TextScore;
+
+    public Image ImageMaskOn;
+    public Image ImageMaskOff;
 
     DrawLine drawLine;
+
+    GameState state;
+
+    bool wearingMask;
+
 
     // Start is called before the first frame update
     void Start()
@@ -31,6 +42,9 @@ public class HUD : MonoBehaviour
         drawLine = GameObject.FindObjectOfType<DrawLine>();
 
         gameStartTime = Time.time;
+        CanvasEnd.enabled = false;
+
+        ToggleMask();
     }
 
     int previousHealthy;
@@ -53,7 +67,7 @@ public class HUD : MonoBehaviour
         {
             var dt = Time.time - previousHealthyTime;
             if (dt > Constants.GameEndingSeconds)
-                ResetSim();
+                EndSim();
         }
         else
         {
@@ -90,13 +104,41 @@ public class HUD : MonoBehaviour
         }
     }
 
+    public void EndSim()
+    {
+        state = GameState.Score;
+
+        CanvasGame.enabled = false;
+        CanvasEnd.enabled = true;
+
+        TextScore.text = TextHealthy.text;
+    }
+
     public void Restart()
     {
+        var spawner = World.DefaultGameObjectInjectionWorld.GetExistingSystem<SpawnerSystem>();
 
+        drawLine.EndSim();
+        spawner.EndSim();
+
+        spawner.SetIsWearingMask(wearingMask);
+        
+        drawLine.StartSim();
+        spawner.StartSim();
+
+
+
+        gameStartTime = Time.time;
+
+        CanvasGame.enabled = true;
+        CanvasEnd.enabled = false;
     }
 
     public void ToggleMask()
     {
+        wearingMask = !wearingMask;
 
+        ImageMaskOff.enabled = !wearingMask;
+        ImageMaskOn.enabled = wearingMask;
     }
 }

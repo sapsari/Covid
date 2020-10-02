@@ -17,4 +17,6 @@ public struct Spawner : IComponentData
     public float InitialInfectedRatio;
 
     public Vector2 Area;
+
+    public bool WearingMask;
 }
