@@ -22,11 +22,15 @@ public class HUD : MonoBehaviour
     public Image ImageMaskOn;
     public Image ImageMaskOff;
 
+    public Text TextInitialRatio;
+
     DrawLine drawLine;
 
     GameState state;
 
     bool wearingMask;
+    int initialInfectedRatioState;
+    float initialInfectedRatioValue;
 
 
     // Start is called before the first frame update
@@ -49,6 +53,7 @@ public class HUD : MonoBehaviour
         state = GameState.Intro;
 
         ToggleMask();
+        ToggleInitialRatio();
     }
 
     int previousHealthy;
@@ -138,6 +143,7 @@ public class HUD : MonoBehaviour
         spawner.EndSim();
 
         spawner.SetIsWearingMask(wearingMask);
+        spawner.SetInitialInfectedRatio(initialInfectedRatioValue);
         
         drawLine.StartSim();
         spawner.StartSim();
@@ -159,5 +165,24 @@ public class HUD : MonoBehaviour
 
         ImageMaskOff.enabled = !wearingMask;
         ImageMaskOn.enabled = wearingMask;
+    }
+
+    public void ToggleInitialRatio()
+    {
+        if (initialInfectedRatioState == 0)
+            initialInfectedRatioState = 1;
+        else if (initialInfectedRatioState == 1)
+            initialInfectedRatioState = 2;
+        else
+            initialInfectedRatioState = 0;
+
+        if (initialInfectedRatioState == 0)
+            initialInfectedRatioValue = Constants.InitialInfectedRatioLow;
+        else if (initialInfectedRatioState == 1)
+            initialInfectedRatioValue = Constants.InitialInfectedRatioMedium;
+        else
+            initialInfectedRatioValue = Constants.InitialInfectedRatioHigh;
+
+        TextInitialRatio.text = "%" + Mathf.FloorToInt(initialInfectedRatioValue * 100).ToString();
     }
 }

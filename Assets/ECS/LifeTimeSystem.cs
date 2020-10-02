@@ -39,6 +39,11 @@ public static class Constants
     public const float MinDistanceBetweenAgents = 1.5f;
 
     public const float GameEndingSeconds = 2.2f;
+
+
+    public const float InitialInfectedRatioLow = .01f;
+    public const float InitialInfectedRatioMedium = .025f;
+    public const float InitialInfectedRatioHigh = .05f;
 }
 
 
