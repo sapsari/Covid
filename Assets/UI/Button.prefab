@@ -37,7 +37,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 60, y: 60}
+  m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6783376946837899000
 CanvasRenderer:
@@ -181,11 +181,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2165160858140766814, guid: c2631786ae6d8b349afac9f4eb256b26, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 30
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 2165160858140766814, guid: c2631786ae6d8b349afac9f4eb256b26, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 30
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 2165160858140766814, guid: c2631786ae6d8b349afac9f4eb256b26, type: 3}
       propertyPath: m_AnchorMin.x
@@ -214,6 +214,14 @@ PrefabInstance:
     - target: {fileID: 2969061998334561058, guid: c2631786ae6d8b349afac9f4eb256b26, type: 3}
       propertyPath: m_Name
       value: UI_Icon
+      objectReference: {fileID: 0}
+    - target: {fileID: 5743784392791322661, guid: c2631786ae6d8b349afac9f4eb256b26, type: 3}
+      propertyPath: m_FontData.m_FontSize
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 5743784392791322661, guid: c2631786ae6d8b349afac9f4eb256b26, type: 3}
+      propertyPath: m_FontData.m_FontStyle
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c2631786ae6d8b349afac9f4eb256b26, type: 3}
