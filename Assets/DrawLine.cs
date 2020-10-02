@@ -32,7 +32,16 @@ public class DrawLine : MonoBehaviour
 
         hashmap = new NativeMultiHashMap<int, float4>(4, Allocator.Persistent);
 
+        StartSim();
+    }
 
+    private void OnDestroy()
+    {
+        hashmap.Dispose();
+    }
+
+    public void StartSim()
+    {
         GenerateLine();
         GenerateLine();
         GenerateLine();
@@ -43,9 +52,14 @@ public class DrawLine : MonoBehaviour
         GenerateLine();
     }
 
-    private void OnDestroy()
+    public void EndSim()
     {
-        hashmap.Dispose();
+        foreach (var line in Lines)
+        {
+            Destroy(line.gameObject);
+        }
+        Lines.Clear();
+        hashmap.Clear();
     }
 
     static Plane GetPlane()

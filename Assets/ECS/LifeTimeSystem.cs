@@ -33,6 +33,12 @@ public static class Constants
     public const float TransmissionRiskWithoutMask = .05f; // %5
 
     public const float InfectionHighlightTime = 1.2f;
+
+    //public const float AreaSize = 50;
+    public const float AreaSize = 130;
+    public const float MinDistanceBetweenAgents = 1.5f;
+
+    public const float GameEndingSeconds = 2.2f;
 }
 
 
@@ -40,13 +46,11 @@ public static class Constants
 public class LifeTimeSystem : SystemBase
 {
     EntityCommandBufferSystem m_Barrier;
-    HUD hud;
     DrawLine drawLine;
 
     protected override void OnCreate()
     {
         m_Barrier = World.GetOrCreateSystem<EndSimulationEntityCommandBufferSystem>();
-        this.hud = UnityEngine.GameObject.FindObjectOfType<HUD>();
         this.drawLine = UnityEngine.GameObject.FindObjectOfType<DrawLine>();
     }
 
@@ -65,6 +69,8 @@ public class LifeTimeSystem : SystemBase
         return hash;
     }
 
+    public int HealthyCount;
+    public int InfectedCount;
 
     // OnUpdate runs on the main thread.
     protected override void OnUpdate()
@@ -73,8 +79,8 @@ public class LifeTimeSystem : SystemBase
 
         
         int agentCount = -1;
-        int healthyCount = -1;
-        int infectedCount = -1;
+        //int healthyCount = -1;
+        //int infectedCount = -1;
 
         Entities
             //.WithAll<Spawner>()
@@ -84,10 +90,11 @@ public class LifeTimeSystem : SystemBase
                 //agentCount = spawner.CountX * spawner.CountY;
                 agentCount = spawner.TotalHealthy + spawner.TotalInfected + spawner.TotalRecovered + spawner.TotalDeceased;
 
-                healthyCount = spawner.TotalHealthy;
-                infectedCount = spawner.TotalInfected;
+                //HealthyCount = spawner.TotalHealthy;
+                //InfectedCount = spawner.TotalInfected;
             }).Run();
 
+        
         
 
 
@@ -142,10 +149,8 @@ public class LifeTimeSystem : SystemBase
         hashPositionsJobHandle.Complete();
 
 
-        healthyCount = healthyQueue.Count;
-        infectedCount = infectedQueue.Count;
-        hud.CountHealthy = healthyCount;
-        hud.CountInfected = infectedCount;
+        HealthyCount = healthyQueue.Count;
+        InfectedCount = infectedQueue.Count;
 
         var dt = Time.DeltaTime;
         var random = new Random(1);
