@@ -32,7 +32,7 @@ public class DrawLine : MonoBehaviour
 
         hashmap = new NativeMultiHashMap<int, float4>(4, Allocator.Persistent);
 
-        StartSim();
+        //StartSim();
     }
 
     private void OnDestroy()

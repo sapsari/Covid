@@ -26,7 +26,7 @@ public class SpawnerSystem : SystemBase
     // between recording the commands and instantiating the entities, but in practice this is usually not noticeable.
     //
     BeginInitializationEntityCommandBufferSystem m_EntityCommandBufferSystem;
-    bool spawned;
+    bool spawned = true;
 
     
 

@@ -11,7 +11,7 @@ public enum GameState { Splash, Intro, Game, Score }
 public class HUD : MonoBehaviour
 {
     public Canvas CanvasGame;
-    public Canvas CanvasBegin;
+    public Canvas CanvasIntro;
     public Canvas CanvasEnd;
 
     public Text TextHealthy;
@@ -42,7 +42,11 @@ public class HUD : MonoBehaviour
         drawLine = GameObject.FindObjectOfType<DrawLine>();
 
         gameStartTime = Time.time;
+        
         CanvasEnd.enabled = false;
+        CanvasGame.enabled = false;
+        CanvasIntro.enabled = true;
+        state = GameState.Intro;
 
         ToggleMask();
     }
@@ -55,31 +59,42 @@ public class HUD : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //TextHealthy.text =  $"Healthy:  {CountHealthy}";
-        //TextInfected.text = $"Infected: {CountInfected}";
-
-        var lifetime = World.DefaultGameObjectInjectionWorld.GetExistingSystem<LifeTimeSystem>();
-        var healthy = lifetime.HealthyCount;
-        var infected = lifetime.InfectedCount;
-
-        if (Time.time - gameStartTime > Constants.TickDelayTime * 2 &&
-            healthy == previousHealthy)
+        if (state == GameState.Intro)
         {
-            var dt = Time.time - previousHealthyTime;
-            if (dt > Constants.GameEndingSeconds)
-                EndSim();
-        }
-        else
-        {
-            previousHealthyTime = Time.time;
-            previousHealthy = healthy;
+            if (Input.GetMouseButtonUp(0))
+            {
+                Restart();
+            }
         }
 
+        if (state == GameState.Game)
+        {
+            //TextHealthy.text =  $"Healthy:  {CountHealthy}";
+            //TextInfected.text = $"Infected: {CountInfected}";
 
-        TextHealthy.text = healthy.ToString();
-        TextInfected.text = infected.ToString();
+            var lifetime = World.DefaultGameObjectInjectionWorld.GetExistingSystem<LifeTimeSystem>();
+            var healthy = lifetime.HealthyCount;
+            var infected = lifetime.InfectedCount;
 
-        TextFPS.text = ((int)Mathf.Floor(1 / Time.deltaTime)).ToString();
+            if (Time.time - gameStartTime > Constants.TickDelayTime * 2 &&
+                healthy == previousHealthy)
+            {
+                var dt = Time.time - previousHealthyTime;
+                if (dt > Constants.GameEndingSeconds)
+                    EndSim();
+            }
+            else
+            {
+                previousHealthyTime = Time.time;
+                previousHealthy = healthy;
+            }
+
+
+            TextHealthy.text = healthy.ToString();
+            TextInfected.text = infected.ToString();
+
+            TextFPS.text = ((int)Mathf.Floor(1 / Time.deltaTime)).ToString();
+        }
     }
 
     bool isEnding;
@@ -106,12 +121,13 @@ public class HUD : MonoBehaviour
 
     public void EndSim()
     {
-        state = GameState.Score;
+        TextScore.text = TextHealthy.text;
 
+        CanvasIntro.enabled = false;
         CanvasGame.enabled = false;
         CanvasEnd.enabled = true;
 
-        TextScore.text = TextHealthy.text;
+        state = GameState.Score;
     }
 
     public void Restart()
@@ -132,6 +148,9 @@ public class HUD : MonoBehaviour
 
         CanvasGame.enabled = true;
         CanvasEnd.enabled = false;
+        CanvasIntro.enabled = false;
+
+        state = GameState.Game;
     }
 
     public void ToggleMask()
