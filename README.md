@@ -1,5 +1,3 @@
-# Covid
-
 # HealthLine
 Covid19 simulation game for [Jamming the Curve](https://itch.io/jam/jamming-the-curve). Building barriers between people will prevent the infection from spreading. As the player you should build them to minimize the infected count.
 
