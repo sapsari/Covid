@@ -101,7 +101,7 @@ public class SpawnerSystem : SystemBase
                 var random = new Random(1);
                 spawner.Area = Vector2.one * Constants.AreaSize * Constants.MinDistanceBetweenAgents;
 
-                Debug.Log($"Spawning with infection ratio of {spawner.InitialInfectedRatio}");
+                //Debug.Log($"Spawning with infection ratio of {spawner.InitialInfectedRatio}");
 
                 //for (var x = 0; x < spawner.CountX; x++)
                 {
